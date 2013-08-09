@@ -9,6 +9,7 @@ module Eval (
 ) where
 
 import Control.Applicative
+import Control.Concurrent (threadDelay)
 import Control.Monad
 import Data.Aeson
 import Data.ByteString.Lazy.Char8 (pack, unpack)
@@ -70,7 +71,7 @@ evalRemotely req = do
             let time = 6000000 -- in microseconds
             putStrLn $ "trying again in " ++ show time ++ " microseconds"
             threadDelay time
-            getProblems
+            evalRemotely req
         _       -> do
             putStrLn $ "evalRemotely returned error code: " ++ (show code)
             return Nothing
