@@ -66,7 +66,7 @@ evalRemotely req = do
     code <- getResponseCode rsp
     case code of
         (2,0,0) -> decode . pack <$> getResponseBody rsp
-        code    -> do
+        _       -> do
             putStrLn $ "evalRemotely returned error code: " ++ (show code)
             return Nothing
 
