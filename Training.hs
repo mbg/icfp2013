@@ -48,11 +48,14 @@ requestProblem tr = do
     bdy <- pack <$> getResponseBody rsp
     return (decode bdy)
 
+
+
 runTrainingWith :: TrainRequest -> IO ()
 runTrainingWith req = requestProblem req >>= \mtp -> case mtp of
     Nothing   -> putStrLn "Unable to obtain training program."
     (Just tp) -> do
         putStrLn (tpProgram tp)
+        putStrLn (tpID tp)
         mapM_ putStrLn (tpOps tp)
         mr <- evalRemotely $ EReq (Just $ tpID tp) Nothing defaultArgs
         case mr of
