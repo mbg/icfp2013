@@ -71,3 +71,4 @@ evalString str = do
 
 defaultArgs :: [String]
 defaultArgs = ["0x0000000000000000", "0x0000000000000001", "0x0000000000000002", "0xFFFFFFFFFFFFFFFF"]
+
