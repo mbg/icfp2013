@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Training (
+    getID,
+    getRandID
 ) where
 
 import Control.Applicative
@@ -15,12 +17,12 @@ import Config
 import AST
 import PrettyPrint
 import Eval
-import Guess
+
 
 data TrainRequest = TR {
     trSize :: Maybe Int,
     trOps  :: Maybe String
-}
+} deriving Show
 
 instance ToJSON TrainRequest where
     toJSON (TR size ops) = object ["size" .= size, "operators" .= ops]
@@ -30,7 +32,7 @@ data TrainingProblem = TP {
     tpID      :: String,
     tpSize    :: Int,
     tpOps     :: [Op]
-}
+} deriving Show
 
 instance FromJSON TrainingProblem where
     parseJSON (Object v) = TP                <$>
@@ -58,6 +60,13 @@ requestProblem tr = do
             putStrLn $ "requestProblem returned error code: " ++ show code
             return Nothing
 
+getID :: TrainRequest -> IO String
+getID tr = do
+        arg <- requestProblem tr
+        return $ maybe "Lawl" (\x -> (tpID x)) arg
+
+getRandID :: IO String
+getRandID = getID (TR Nothing Nothing)
 
 {-
 runTrainingWith :: TrainRequest -> IO ()

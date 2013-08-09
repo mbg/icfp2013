@@ -12,6 +12,8 @@ import Data.ByteString.Lazy.Char8 (pack, unpack)
 
 import AST
 import PrettyPrint
+import Training
+
 
 type ID = String
 
@@ -53,3 +55,8 @@ rawGuess g = do
 
 runGuess :: Program -> ID -> IO ()
 runGuess prog cid = rawGuess (GReq cid $ ppProgram prog "") >>= print
+
+randomGuess :: Program -> IO ()
+randomGuess g = do
+                rid <- getRandID
+                runGuess g rid
