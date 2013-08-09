@@ -15,23 +15,23 @@ import PrettyPrint
 
 type ID = String
 
-data Guess = G {
+data GuessRequest = GReq {
     grID      :: String,
     grProgram :: String
-}
+} deriving Show
 
-instance ToJSON Guess where
-    toJSON (G gid prog) = object ["id" .= gid, "program" .= prog]
+instance ToJSON GuessRequest where
+    toJSON (GReq gid prog) = object ["id" .= gid, "program" .= prog]
 
-data GuessResponse = GR {
+data GuessResponse = GRes {
     grStatus    :: String,
     grValues    :: Maybe [String],
     grMessage   :: Maybe String,
     grLightning :: Maybe Bool
-}
+} deriving Show
 
 instance FromJSON GuessResponse where
-    parseJSON (Object v) = GR                   <$>
+    parseJSON (Object v) = GRes                 <$>
                             v .: "status"       <*>
                             v .:? "values"      <*>
                             v .:? "message"     <*>
@@ -41,29 +41,15 @@ instance FromJSON GuessResponse where
 guessURI :: String
 guessURI = "http://icfpc2013.cloudapp.net/guess?auth=" ++ apiKey ++ "vpsH1H"
 
-makeGuess :: Guess -> IO (Maybe GuessResponse)
-makeGuess g = do
+rawGuess :: GuessRequest -> IO (Maybe GuessResponse)
+rawGuess g = do
     rsp <- simpleHTTP $ postRequestWithBody guessURI "text/plain" (unpack (encode g))
-    getResponseCode rsp  >>= \x -> case x of
+    code <- getResponseCode rsp
+    case code of
         (2,0,0) -> decode . pack <$> getResponseBody rsp
-        code    ->  do
-                putStrLn $ "makeGuess returned error code: " ++ (show code)
-                return Nothing
-
-
-makeGuessOn :: Guess -> IO ()
-makeGuessOn g = do
-    agr <- makeGuess g
-    case agr of
-        Nothing -> putStrLn "No Response"
-        (Just gr) -> do
-                     putStrLn (grStatus gr)
-                     case (grMessage gr) of
-                        (Just msg) -> putStrLn msg
-                        Nothing -> putStrLn "No Message"
-                     case (grValues gr) of
-                        (Just val) -> mapM_ putStrLn val
-                        Nothing -> putStrLn "No Values"
+        _       -> do
+            putStrLn $ "makeGuess returned error code: " ++ (show code)
+            return Nothing
 
 runGuess :: Program -> ID -> IO ()
-runGuess prog cid = makeGuessOn (G cid $(ppProgram prog) "")
+runGuess prog cid = rawGuess (GReq cid $ ppProgram prog "") >>= print
