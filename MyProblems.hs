@@ -34,3 +34,4 @@ getProblems = do
     rsp <- simpleHTTP (postRequest problemsURI)
     bdy <- pack <$> getResponseBody rsp
     return (decode bdy)
+
