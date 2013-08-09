@@ -29,11 +29,12 @@ eval idOrProg args = (>>= interpretResponse) <$> evalRemotely request
         (\id'   -> (Just id', Nothing                  ))
         (\prog' -> (Nothing , Just $ ppProgram prog' ""))
         idOrProg
+
     request = EReq id prog $ map (printf "0x%016X") args
 
-interpretResponse :: EvalResponse -> Maybe [Word64]
-interpretResponse (ERes "ok" mOuts _   ) = map read <$> mOuts
-interpretResponse (ERes _   _      mMsg) = traceShow mMsg Nothing
+    interpretResponse :: EvalResponse -> Maybe [Word64]
+    interpretResponse (ERes "ok" mOuts _   ) = map read <$> mOuts
+    interpretResponse (ERes _    _     mMsg) = traceShow mMsg Nothing
 
 data EvalRequest = EReq {
     ereqID      :: Maybe String,
