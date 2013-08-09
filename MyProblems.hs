@@ -16,7 +16,7 @@ import AST
 data Problem = Problem {
     problemID   :: String,
     problemSize :: Int,
-    problemOps  :: [String]
+    problemOps  :: [Op]
 } deriving Show
 
 instance FromJSON Problem where
@@ -25,10 +25,10 @@ instance FromJSON Problem where
                             v .: "size" <*>
                             v .: "operators"
     parseJSON _          = mzero
-    
+
 problemsURI :: String
 problemsURI = "http://icfpc2013.cloudapp.net/myproblems?auth=" ++ apiKey ++ "vpsH1H"
-   
+
 getProblems :: IO (Maybe [Problem])
 getProblems = do
     rsp <- simpleHTTP (postRequest problemsURI)
