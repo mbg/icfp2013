@@ -13,10 +13,22 @@ import Control.Monad
 import Data.Aeson
 import Data.ByteString.Lazy.Char8 (pack, unpack)
 import Data.Maybe (fromJust)
+import Data.Word (Word64)
 import Network.HTTP
+import Text.Printf
 
+import AST
 import Config
 import PrettyPrint 
+
+evalProgram :: Program -> [Word64] -> IO (Maybe [Word64])
+evalProgram ast args = evalRemotely request >>= maybe httpErr (\(ERes status mOuts mMsg) ->
+    if status == "ok"
+        then return (map read <$> mOuts)
+        else (print mMsg >> return Nothing))
+    where
+    request = EReq Nothing (Just (ppProgram ast "")) (map (printf "0x%016X") args)
+    httpErr = putStr "HTTP Request or JSON parsing failed in evalProgram" >> return Nothing
 
 data EvalRequest = EReq {
     ereqID      :: Maybe String,
