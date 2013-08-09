@@ -23,7 +23,7 @@ import Config (apiKey)
 import PrettyPrint (ppProgram)
 
 eval :: Either Id Program -> [Word64] -> IO (Maybe [Word64])
-eval idOrProg args = (>>= interpretResponse) <$> evalRemotely request
+eval idOrProg args = (interpretResponse =<<) <$> evalRemotely request
     where
     (id, prog) = either
         (\id'   -> (Just id', Nothing                  ))
@@ -63,9 +63,10 @@ evalURI = "http://icfpc2013.cloudapp.net/eval?auth=" ++ apiKey ++ "vpsH1H"
 evalRemotely :: EvalRequest -> IO (Maybe EvalResponse)
 evalRemotely req = do
     rsp <- simpleHTTP $ postRequestWithBody evalURI "text/plain" (unpack (encode req))
-    getResponseCode rsp >>= \x -> case x of
+    code <- getResponseCode rsp
+    case code of
         (2,0,0) -> decode . pack <$> getResponseBody rsp
-        code    -> do
+        _       -> do
             putStrLn $ "evalRemotely returned error code: " ++ (show code)
             return Nothing
 
