@@ -28,7 +28,7 @@ data TrainingProblem = TP {
     tpProgram :: String,
     tpID      :: String,
     tpSize    :: Int,
-    tpOps     :: [String]
+    tpOps     :: [Op]
 }
 
 instance FromJSON TrainingProblem where
@@ -41,12 +41,21 @@ instance FromJSON TrainingProblem where
 
 trainURI :: String
 trainURI = "http://icfpc2013.cloudapp.net/train?auth=" ++ apiKey ++ "vpsH1H"
-    
+
 requestProblem :: TrainRequest -> IO (Maybe TrainingProblem)
 requestProblem tr = do
     rsp <- simpleHTTP $ postRequestWithBody trainURI "text/plain" (unpack (encode tr))
-    bdy <- pack <$> getResponseBody rsp
-    return (decode bdy)
+    code <- getResponseCode rsp
+    case code of
+        (2,0,0) -> decode . pack <$> getResponseBody rsp
+        (4,2,9) -> do
+            let time = 6000000 -- in microseconds
+            putStrLn $ "trying again in " ++ show time ++ " microseconds"
+            threadDelay time
+            requestProblem tr
+        _ -> do
+            putStrLn $ "requestProblem returned error code: " ++ show code
+            return Nothing
 
 runTrainingWith :: TrainRequest -> IO ()
 runTrainingWith req = requestProblem req >>= \mtp -> case mtp of
@@ -58,6 +67,6 @@ runTrainingWith req = requestProblem req >>= \mtp -> case mtp of
         case mr of
             Nothing   -> putStrLn "Unable to evaluate program."
             (Just er) -> mapM_ (putStrLn) (fromJust $ eresOuts er)
-    
+
 runTraining :: IO ()
 runTraining = runTrainingWith (TR Nothing Nothing)
