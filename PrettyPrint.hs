@@ -24,7 +24,7 @@ ppExpr :: Expr -> ShowS
 ppExpr Zero       = showChar '0'
 ppExpr One        = showChar '1'
 ppExpr (Id id)    = showString id
-ppExpr (If c t f) = ppInParens $
+ppExpr (IfZero c t f) = ppInParens $
     showString "if0 " .
     ppExpr c . space .
     ppExpr t . space .

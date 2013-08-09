@@ -19,7 +19,7 @@ data Program = Lambda Id Expr
 data Expr = Zero
           | One
           | Id Id
-          | If Expr Expr Expr
+          | IfZero Expr Expr Expr
           | Fold Expr Expr Id Id Expr
           | UnaryOp Op1 Expr
           | BinaryOp Op2 Expr Expr
