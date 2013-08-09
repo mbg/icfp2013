@@ -66,6 +66,11 @@ evalRemotely req = do
     code <- getResponseCode rsp
     case code of
         (2,0,0) -> decode . pack <$> getResponseBody rsp
+        (4,2,9) -> do
+            let time = 6000000 -- in microseconds
+            putStrLn $ "trying again in " ++ show time ++ " microseconds"
+            threadDelay time
+            getProblems
         _       -> do
             putStrLn $ "evalRemotely returned error code: " ++ (show code)
             return Nothing
