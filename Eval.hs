@@ -23,7 +23,7 @@ import Config (apiKey)
 import PrettyPrint (ppProgram)
 
 eval :: Either Id Program -> [Word64] -> IO (Maybe [Word64])
-eval idOrProg args = (>>= interpretResponse) <$> evalRemotely request
+eval idOrProg args = (interpretResponse =<<) <$> evalRemotely request
     where
     (id, prog) = either
         (\id'   -> (Just id', Nothing                  ))
