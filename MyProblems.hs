@@ -16,14 +16,18 @@ import AST
 data Problem = Problem {
     problemID   :: String,
     problemSize :: Int,
-    problemOps  :: [Op]
+    problemOps  :: [Op],
+    solved      :: Maybe Bool,
+    timeLeft    :: Maybe Double
 } deriving Show
 
 instance FromJSON Problem where
-    parseJSON (Object v) = Problem      <$>
-                            v .: "id"   <*>
-                            v .: "size" <*>
-                            v .: "operators"
+    parseJSON (Object v) = Problem            <$>
+                            v .:  "id"        <*>
+                            v .:  "size"      <*>
+                            v .:  "operators" <*>
+                            v .:? "solved"    <*>
+                            v .:? "timeLeft"
     parseJSON _          = mzero
 
 problemsURI :: String
