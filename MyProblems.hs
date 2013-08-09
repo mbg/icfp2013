@@ -1,5 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+module MyProblems (
+    getProblems
+) where
+
 import Control.Applicative
 import Control.Monad
 import Data.Aeson
@@ -12,8 +16,8 @@ import AST
 data Problem = Problem {
     problemID   :: String,
     problemSize :: Int,
-    problemOps  :: [Operator]
-}
+    problemOps  :: [String]
+} deriving Show
 
 instance FromJSON Problem where
     parseJSON (Object v) = Problem      <$>
@@ -22,20 +26,11 @@ instance FromJSON Problem where
                             v .: "operators"
     parseJSON _          = mzero
     
-getProblemsStr :: IO String
-getProblemsStr = do
-    rsp <- simpleHTTP (postRequest "http://icfpc2013.cloudapp.net/myproblems?auth=0288aN0beFycyfRn6qBOyA89Xgg8lEXzdutFgvKgvpsH1H")
-    getResponseBody rsp
+problemsURI :: String
+problemsURI = "http://icfpc2013.cloudapp.net/myproblems?auth=" ++ apiKey ++ "vpsH1H"
    
 getProblems :: IO (Maybe [Problem])
 getProblems = do
-    rsp <- simpleHTTP (postRequest "http://icfpc2013.cloudapp.net/myproblems?auth=0288aN0beFycyfRn6qBOyA89Xgg8lEXzdutFgvKgvpsH1H")
+    rsp <- simpleHTTP (postRequest problemsURI)
     bdy <- pack <$> getResponseBody rsp
     return (decode bdy)
-    
-debugProblems :: IO ()
-debugProblems = do
-    mps <- getProblems
-    case mps of
-        (Just ps) -> putStrLn "Just ps"
-        Nothing   -> putStrLn "Nothing"
