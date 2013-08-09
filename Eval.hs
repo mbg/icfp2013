@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Eval (
     evalRemotely,
@@ -63,7 +63,7 @@ evalURI = "http://icfpc2013.cloudapp.net/eval?auth=" ++ apiKey ++ "vpsH1H"
 evalRemotely :: EvalRequest -> IO (Maybe EvalResponse)
 evalRemotely req = do
     rsp <- simpleHTTP $ postRequestWithBody evalURI "text/plain" (unpack (encode req))
-    getResponseCode rsp >>= \case
+    getResponseCode rsp >>= \x -> case x of
         (2,0,0) -> decode . pack <$> getResponseBody rsp
         code    -> do
             putStrLn $ "evalRemotely returned error code: " ++ (show code)
