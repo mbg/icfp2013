@@ -2,6 +2,7 @@
 
 module Eval (
     evalRemotely,
+    evalString,
     defaultArgs,
     EvalRequest(..),
     EvalResponse(..)
@@ -11,6 +12,7 @@ import Control.Applicative
 import Control.Monad
 import Data.Aeson
 import Data.ByteString.Lazy.Char8 (pack, unpack)
+import Data.Maybe (fromJust)
 import Network.HTTP
 
 import Config
@@ -45,6 +47,15 @@ evalRemotely req = do
     rsp <- simpleHTTP $ postRequestWithBody evalURI "text/plain" (unpack (encode req))
     bdy <- pack <$> getResponseBody rsp
     return (decode bdy)
+    
+evalString :: String -> IO ()
+evalString str = do
+    mer <- evalRemotely $ EReq Nothing (Just str) defaultArgs
+    case mer of
+        Nothing   -> putStrLn "Unable to evaluate string."
+        (Just er) -> case (eresStatus er) of
+            "ok"    -> mapM_ putStrLn (fromJust $ eresOuts er)
+            "error" -> putStrLn $ "error: " ++ (fromJust $ eresMsg er) 
 
 defaultArgs :: [String]
-defaultArgs = ["0x0000000000000000", "0x0000000000000001", "0xFFFFFFFFFFFFFFFF"]
+defaultArgs = ["0x0000000000000000", "0x0000000000000001", "0x0000000000000002", "0xFFFFFFFFFFFFFFFF"]
