@@ -4,6 +4,7 @@ module Training (
 ) where
 
 import Control.Applicative
+import Control.Concurrent (threadDelay)
 import Control.Monad
 import Data.Aeson
 import Data.ByteString.Lazy.Char8 (pack, unpack)
@@ -62,7 +63,7 @@ runTrainingWith req = requestProblem req >>= \mtp -> case mtp of
     Nothing   -> putStrLn "Unable to obtain training program."
     (Just tp) -> do
         putStrLn (tpProgram tp)
-        mapM_ putStrLn (tpOps tp)
+        mapM_ print (tpOps tp)
         mr <- evalRemotely $ EReq (Just $ tpID tp) Nothing defaultArgs
         case mr of
             Nothing   -> putStrLn "Unable to evaluate program."
