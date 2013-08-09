@@ -16,26 +16,24 @@ import Data.Maybe (fromJust)
 import Data.Word (Word64)
 import Debug.Trace
 import Network.HTTP
-import Text.Printf
+import Text.Printf (printf)
 
-import AST
-import Config
-import PrettyPrint
+import AST (Id, Program)
+import Config (apiKey)
+import PrettyPrint (ppProgram)
 
-eval :: Either String Program -> [Word64] -> IO (Maybe [Word64])
+eval :: Either Id Program -> [Word64] -> IO (Maybe [Word64])
 eval idOrProg args = (>>= interpretResponse) <$> evalRemotely request
     where
     (id, prog) = either
         (\id'   -> (Just id', Nothing                  ))
         (\prog' -> (Nothing , Just $ ppProgram prog' ""))
         idOrProg
-    request = EReq id prog (map (printf "0x%016X") args)
+    request = EReq id prog $ map (printf "0x%016X") args
 
 interpretResponse :: EvalResponse -> Maybe [Word64]
-interpretResponse (ERes status mOuts mMsg) =
-    if status == "ok"
-        then map read <$> mOuts
-        else traceShow mMsg Nothing
+interpretResponse (ERes "ok" mOuts _   ) = map read <$> mOuts
+interpretResponse (ERes _   _      mMsg) = traceShow mMsg Nothing
 
 data EvalRequest = EReq {
     ereqID      :: Maybe String,
