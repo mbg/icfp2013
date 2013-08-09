@@ -5,6 +5,7 @@ module MyProblems (
 ) where
 
 import Control.Applicative
+import Control.Concurrent (threadDelay)
 import Control.Monad
 import Data.Aeson
 import Data.ByteString.Lazy.Char8 (pack)
@@ -36,6 +37,16 @@ problemsURI = "http://icfpc2013.cloudapp.net/myproblems?auth=" ++ apiKey ++ "vps
 getProblems :: IO (Maybe [Problem])
 getProblems = do
     rsp <- simpleHTTP (postRequest problemsURI)
-    bdy <- pack <$> getResponseBody rsp
-    return (decode bdy)
+    code <- getResponseCode rsp
+    case code of
+        (2,0,0) -> decode . pack <$> getResponseBody rsp
+        (4,2,9) -> do
+            let time = 6000000 -- in microseconds
+            putStrLn $ "trying again in " ++ show time ++ " microseconds"
+            threadDelay time
+            getProblems
+        _ -> do
+            putStrLn $ "getProblems returned error code: " ++ show code
+            return Nothing
+
 
