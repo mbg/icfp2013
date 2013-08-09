@@ -7,6 +7,7 @@ import Control.Applicative
 import Control.Monad
 import Data.Aeson
 import Data.ByteString.Lazy.Char8 (pack, unpack)
+import Data.Maybe (fromJust)
 import Network.HTTP
 
 import Config
@@ -47,7 +48,16 @@ requestProblem tr = do
     bdy <- pack <$> getResponseBody rsp
     return (decode bdy)
 
-runTraining :: IO ()
-runTraining = requestProblem (TR Nothing Nothing) >>= \mtp -> case mtp of
+runTrainingWith :: TrainRequest -> IO ()
+runTrainingWith req = requestProblem req >>= \mtp -> case mtp of
     Nothing   -> putStrLn "Unable to obtain training program."
-    (Just tp) -> putStrLn (tpProgram tp)
+    (Just tp) -> do
+        putStrLn (tpProgram tp)
+        mapM_ putStrLn (tpOps tp)
+        mr <- evalRemotely $ EReq (Just $ tpID tp) Nothing defaultArgs
+        case mr of
+            Nothing   -> putStrLn "Unable to evaluate program."
+            (Just er) -> mapM_ (putStrLn) (fromJust $ eresOuts er)
+    
+runTraining :: IO ()
+runTraining = runTrainingWith (TR Nothing Nothing)
