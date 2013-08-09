@@ -58,16 +58,14 @@ requestProblem tr = do
             putStrLn $ "requestProblem returned error code: " ++ show code
             return Nothing
 
-runTrainingWith :: TrainRequest -> IO ()
-runTrainingWith req = requestProblem req >>= \mtp -> case mtp of
-    Nothing   -> putStrLn "Unable to obtain training program."
-    (Just tp) -> do
-        putStrLn (tpProgram tp)
-        mapM_ print (tpOps tp)
-        mr <- evalRemotely $ EReq (Just $ tpID tp) Nothing defaultArgs
-        case mr of
-            Nothing   -> putStrLn "Unable to evaluate program."
-            (Just er) -> mapM_ (putStrLn) (fromJust $ eresOuts er)
 
+{-
+runTrainingWith :: TrainRequest -> IO ()
 runTraining :: IO ()
-runTraining = runTrainingWith (TR Nothing Nothing)
+
+David says: I can only assume these were placeholders,
+particularly as with the previous implementations
+    runTrainingWith tr === requestProblem tr >>= print
+and runTraining just returned a status error
+-}
+

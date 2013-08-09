@@ -4,10 +4,16 @@ module Guess (
 ) where
 
 import Control.Applicative
+import Control.Monad
 import Data.Aeson
 import Config
 import Network.HTTP
 import Data.ByteString.Lazy.Char8 (pack, unpack)
+
+import AST
+import PrettyPrint
+
+type ID = String
 
 data Guess = G {
 	grID :: String,
@@ -30,6 +36,7 @@ instance FromJSON GuessResponse where
 							v .:? "values"      <*>
 							v .:? "message"		<*>
 							v .:? "lightning" 
+	parseJSON _				= mzero
 
 guessURI :: String
 guessURI = "http://icfpc2013.cloudapp.net/guess?auth=" ++ apiKey ++ "vpsH1H"
@@ -37,5 +44,26 @@ guessURI = "http://icfpc2013.cloudapp.net/guess?auth=" ++ apiKey ++ "vpsH1H"
 makeGuess :: Guess -> IO (Maybe GuessResponse)
 makeGuess g = do
 	rsp <- simpleHTTP $ postRequestWithBody guessURI "text/plain" (unpack (encode g))
-	bdy <- pack <$> getResponseBody rsp
-	return (decode bdy)
+	getResponseCode rsp  >>= \x -> case x of 
+		(2,0,0) -> decode . pack <$> getResponseBody rsp
+		code 	->  do
+            	putStrLn $ "makeGuess returned error code: " ++ (show code)
+            	return Nothing
+
+
+makeGuessOn :: Guess -> IO ()
+makeGuessOn g = do
+	agr <- makeGuess g
+	case agr of
+		Nothing -> putStrLn "No Response"
+		(Just gr) -> do 
+					 putStrLn (grStatus gr)
+					 case (grMessage gr) of 
+					 	(Just msg) -> putStrLn msg
+					 	Nothing -> putStrLn "No Message"
+					 case (grValues gr) of
+					 	(Just val) -> mapM_ putStrLn val
+					 	Nothing -> putStrLn "No Values"
+
+runGuess :: Program -> ID -> IO ()
+runGuess prog cid = makeGuessOn (G cid $(ppProgram prog) "")
