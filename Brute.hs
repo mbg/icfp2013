@@ -63,6 +63,8 @@ TODO:
     This will be much faster BUT HOWEVER this will cause some problems to be
     unsolvable since we'll already have thrown away all the other possibilities.
     To alleviate this, increase the size of the 'answers' field.
+    Or we could possible just combine Exprs that give the same value without actually
+    just silently throwing them away.
 
     the skeleton for if0 is there, get it working
 
