@@ -123,7 +123,7 @@ addOpAt n exps' (Op1 o1) = addOpAt' n exps' (map addO1 (exps' M.! (n-1)))
 addOpAt n exps' (Op2 o2) | n >= 2 = addOpAt' n exps' $
     [ addO2 e1 e2
     | (l1,l2) <- possLevels (n-1)
-    , (e1, e2) <- if False -- l1 == l2
+    , (e1, e2) <- if l1 == l2
         then sym (exps' M.! l1) -- we don't want duplicates w.r.t. symmetry
         else [ (e1', e2')       -- we're in no danger of duplicates as e1 and e2 are different sizes
              | e1' <- (exps' M.! l1)
