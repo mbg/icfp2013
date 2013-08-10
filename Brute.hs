@@ -24,7 +24,7 @@ for efficiency reasons but if we have too many inputs this could slow
 things down so we may only want to be strict in the first few (will
 probably need a custom data type for this). I'm not yet sure if we
 should be lazy in the Expr or not - if it's just data constructors
-surely we don't want thunks hanging around?
+then would evaluating to whnf make a difference?
 
 See 'main' for usage. Once there are multiple possible [Expr], that's
 when we can either
@@ -35,6 +35,7 @@ when we can either
 
 CURRENT STATUS:
     should work for all expressions without if0, fold or tfold
+    probably won't work for bonus, I have no idea
     probably incredibly slowly
 
 TODO:
@@ -60,6 +61,9 @@ TODO:
     To alleviate this, increase the size of the 'answers' field.
 
     the skeleton for if0 is there, get it working
+
+    maybe add an 'escape hatch' if we find a problem smaller than
+    needed that gives the right answers? Probably a bad idea tbh.
 
     fold, tfold
         the trouble with this is that we currently assume (in 'firstLevel')
