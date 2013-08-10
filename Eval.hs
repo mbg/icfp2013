@@ -1,9 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Eval (
+    eval,
     evalRemotely,
     evalString,
     defaultArgs,
+    defaultArgs64,
     EvalRequest(..),
     EvalResponse(..)
 ) where

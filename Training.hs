@@ -68,10 +68,22 @@ getID tr = do
 getRandID :: IO String
 getRandID = getID (TR Nothing Nothing)
 
-{-
 runTrainingWith :: TrainRequest -> IO ()
-runTraining :: IO ()
+runTrainingWith tr = do
+    mtp <- requestProblem tr
+    case mtp of
+        Nothing   -> putStrLn "Couldn't parse problem"
+        (Just tp) -> do
+            putStrLn $ tpProgram tp
+            er <- eval (Left (tpID tp)) defaultArgs64
+            case er of
+                Nothing   -> putStrLn "Couldn't evaluate"
+                (Just rs) -> mapM_ print $ getSolns (tpSize tp) defaultArgs64 rs (tpOps tp)
 
+runTraining :: IO ()
+runTraining = runTrainingWith (TR (Just 4) (Just ""))
+
+{-
 David says: I can only assume these were placeholders,
 particularly as with the previous implementations
     runTrainingWith tr === requestProblem tr >>= print
