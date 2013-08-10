@@ -28,7 +28,7 @@ data Expr = Zero
 
 data Op1 = Not | Shl1 | Shr1 | Shr4 | Shr16            deriving Show
 data Op2 = And | Or | Xor | Plus                       deriving Show
-data Op = Op1 Op1 | Op2 Op2 | OIFZero | OTFold | OFold deriving Show
+data Op = Op1 Op1 | Op2 Op2 | OIFZero | OTFold | OFold | MBonus deriving Show
 
 instance FromJSON Op1 where
     parseJSON (String "not"  ) = return Not
@@ -49,5 +49,6 @@ instance FromJSON Op where
     parseJSON (String "if0")   = return OIFZero
     parseJSON (String "tfold") = return OTFold
     parseJSON (String "fold")  = return OFold
+    parseJSON (String "bonus") = return MBonus
     parseJSON other            = (Op1 <$> parseJSON other) <|>
                                  (Op2 <$> parseJSON other)
