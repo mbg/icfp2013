@@ -17,7 +17,7 @@ import Config
 import AST
 import PrettyPrint
 import Eval
-
+import Brute
 
 data TrainRequest = TR {
     trSize :: Maybe Int,

@@ -1,5 +1,9 @@
 {-# LANGUAGE TupleSections #-}
 
+module Brute (
+    getSolns
+) where
+
 import Control.Arrow
 import Control.Monad.State
 import Data.IntMap.Strict (IntMap)
