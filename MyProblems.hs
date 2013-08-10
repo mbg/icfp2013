@@ -48,5 +48,3 @@ getProblems = do
         _ -> do
             putStrLn $ "getProblems returned error code: " ++ show code
             return Nothing
-
-

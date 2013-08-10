@@ -1,7 +1,9 @@
 
 module LocalEval (
     localEval,
-    vectorise
+    vectorise,
+    evalUnary,
+    evalBinary
 ) where
 
 import Data.Bits
@@ -20,7 +22,7 @@ vectorise = vectorise' 0
 
 evalUnary :: Op1 -> Word64 -> Word64
 evalUnary Not   = complement
-evalUnary Shl1  = flip shiftL 1 
+evalUnary Shl1  = flip shiftL 1
 evalUnary Shr1  = flip shiftR 1
 evalUnary Shr4  = flip shiftR 4
 evalUnary Shr16 = flip shiftR 16
@@ -39,19 +41,19 @@ evalExpr m (IfZero c t f)
     | evalExpr m c == 0 = evalExpr m t
     | otherwise         = evalExpr m f
 evalExpr m (Fold e0 e1 y z e) = let
-    e0v = vectorise (evalExpr m e0) 
+    e0v = vectorise (evalExpr m e0)
     e1v = evalExpr m e1 in foldl (\yv zv -> evalExpr (M.insert y yv (M.insert z zv m)) e) e1v e0v
 evalExpr m (UnaryOp op e)     = evalUnary op (evalExpr m e)
 evalExpr m (BinaryOp op e e') = evalBinary op (evalExpr m e) (evalExpr m e')
 
-localEval :: Program -> Word64 -> Word64 
+localEval :: Program -> Word64 -> Word64
 localEval (Lambda id e) v = evalExpr (M.singleton id v) e
 
 testProgram :: Program
 testProgram = Lambda "x" (Fold (Id "x") Zero "y" "z" (BinaryOp Or (Id "y") (Id "z")))
 
 solution :: Word64
-solution = 0x0000000000000011 .|. 
+solution = 0x0000000000000011 .|.
  (0x0000000000000022 .|.
  (0x0000000000000033 .|.
  (0x0000000000000044 .|.

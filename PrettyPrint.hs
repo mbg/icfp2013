@@ -1,6 +1,7 @@
 
 module PrettyPrint (
-    ppProgram
+    ppProgram,
+    ppExpr
 ) where
 
 import Data.Char (toLower)
@@ -19,7 +20,7 @@ ppProgram (Lambda id e) = ppInParens $
     ppInParens (showString id) .
     space .
     ppExpr e
-    
+
 ppExpr :: Expr -> ShowS
 ppExpr Zero       = showChar '0'
 ppExpr One        = showChar '1'
@@ -33,7 +34,7 @@ ppExpr (Fold e0 e1 x y e2) = ppInParens $
     showString "fold " .
     ppExpr e0 . space .
     ppExpr e1 . space .
-    ppInParens ( 
+    ppInParens (
         showString "lambda " .
         ppInParens (showString x . space . showString y) .
         space .
@@ -46,7 +47,7 @@ ppExpr (BinaryOp op e0 e1) = ppInParens $
     ppBinary op . space .
     ppExpr e0 . space .
     ppExpr e1
-    
+
 ppUnary :: Op1 -> ShowS
 ppUnary = showString . map toLower . show
 
