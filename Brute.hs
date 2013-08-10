@@ -28,7 +28,7 @@ for efficiency reasons but if we have too many inputs this could slow
 things down so we may only want to be strict in the first few (will
 probably need a custom data type for this). I'm not yet sure if we
 should be lazy in the Expr or not - if it's just data constructors
-surely we don't want thunks hanging around?
+then would evaluating to whnf make a difference?
 
 See 'main' for usage. Once there are multiple possible [Expr], that's
 when we can either
@@ -39,6 +39,7 @@ when we can either
 
 CURRENT STATUS:
     should work for all expressions without if0, fold or tfold
+    probably won't work for bonus, I have no idea
     probably incredibly slowly
 
 TODO:
@@ -64,6 +65,9 @@ TODO:
     To alleviate this, increase the size of the 'answers' field.
 
     the skeleton for if0 is there, get it working
+
+    maybe add an 'escape hatch' if we find a problem smaller than
+    needed that gives the right answers? Probably a bad idea tbh.
 
     fold, tfold
         the trouble with this is that we currently assume (in 'firstLevel')
@@ -123,7 +127,7 @@ addOpAt n exps' (Op1 o1) = addOpAt' n exps' (map addO1 (exps' M.! (n-1)))
 addOpAt n exps' (Op2 o2) | n >= 2 = addOpAt' n exps' $
     [ addO2 e1 e2
     | (l1,l2) <- possLevels (n-1)
-    , (e1, e2) <- if False -- l1 == l2
+    , (e1, e2) <- if l1 == l2
         then sym (exps' M.! l1) -- we don't want duplicates w.r.t. symmetry
         else [ (e1', e2')       -- we're in no danger of duplicates as e1 and e2 are different sizes
              | e1' <- (exps' M.! l1)
