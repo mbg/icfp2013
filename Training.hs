@@ -18,6 +18,7 @@ import Config
 import AST
 import PrettyPrint
 import Eval
+import Guess
 import Brute
 
 data TrainRequest = TR {
@@ -79,8 +80,17 @@ runTrainingWith tr = do
             er <- eval (Left (tpID tp)) defaultArgs64
             case er of
                 Nothing   -> putStrLn "Couldn't evaluate"
-                (Just rs) -> mapM_ print $ brute (tpSize tp) (tpOps tp) defaultArgs64 rs
-
+                (Just rs) -> let exps = brute (tpSize tp) (tpOps tp) defaultArgs64 rs in do
+                    putStrLn "eval returned the following:"
+                    mapM_ print exps
+                    case exps of
+                        []       -> putStrLn "no expressions!"
+                        (prog:_) -> rawGuess (GReq (tpID tp) (ppProgram prog "")) >>= 
+                                     maybe (putStrLn "brute failed") (\res -> case res of
+                                        GRes "win" _ _ _          -> putStrLn $ "correctly guessed " ++ show (tpID tp)
+                                        GRes "mismatch" _  _  _   -> putStrLn $ "mismatch on " ++ show (tpID tp) ++ ", moving on"
+                                        GRes "error" _ (Just e) _ -> putStrLn $ "on problem " ++ show (tpID tp) ++ " we got the errror " ++ e
+                                        _                         -> putStrLn "unrecognised guess response")
 runTraining :: IO ()
 runTraining = runTrainingWith (TR (Just 10) (Just ""))
 
