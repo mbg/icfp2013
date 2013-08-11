@@ -14,12 +14,14 @@ import PrettyPrint
 
 
 training = True
+debug = True
 inputLength = 5
 
 main = if training then runTraining else do
     (Just problems) <- getProblems
-    let okProblems = filter noDifficultOps problems
-    mapM_ solveProblem $ sortBy (comparing problemSize) okProblems
+    let okProblems = sortBy (comparing problemSize) $ filter noDifficultOps problems
+    if debug then solveProblem (head okProblems)
+             else mapM_ solveProblem okProblems
 
 solveProblem :: Problem -> IO ()
 solveProblem (Problem _ _ _ (Just True) _) = return ()
