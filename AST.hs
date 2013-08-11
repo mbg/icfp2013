@@ -16,7 +16,7 @@ import Data.Aeson
 
 type Id = String
 
-data Program = Lambda Id Expr
+data Program = Lambda Id Expr deriving Show
 
 data Expr = Zero
           | One
