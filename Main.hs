@@ -1,9 +1,10 @@
 import Control.Monad (forM_, replicateM)
-import Data.List (sortBy)
+import Data.List (intersect, sortBy)
 import Data.Ord (comparing)
 import Data.Word
 import System.Random
 
+import AST
 import Brute
 import Eval
 import Guess
@@ -39,4 +40,4 @@ inputSpread :: IO [Word64]
 inputSpread = replicateM inputLength randomIO
 
 noDifficultOps :: Problem -> Bool
-noDifficultOps = undefined
+noDifficultOps (Problem _ _ ops _ _) = null $ intersect [OIfZero, OTFold, OFold, Bonus] ops

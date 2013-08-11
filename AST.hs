@@ -27,9 +27,9 @@ data Expr = Zero
           | BinaryOp Op2 Expr Expr
     deriving Show
 
-data Op1 = Not | Shl1 | Shr1 | Shr4 | Shr16                    deriving Show
-data Op2 = And | Or | Xor | Plus                               deriving Show
-data Op = Op1 Op1 | Op2 Op2 | OIfZero | OTFold | OFold | Bonus deriving Show
+data Op1 = Not | Shl1 | Shr1 | Shr4 | Shr16                    deriving (Eq, Show)
+data Op2 = And | Or | Xor | Plus                               deriving (Eq, Show)
+data Op = Op1 Op1 | Op2 Op2 | OIfZero | OTFold | OFold | Bonus deriving (Eq, Show)
 
 instance FromJSON Op1 where
     parseJSON (String "not"  ) = return Not
