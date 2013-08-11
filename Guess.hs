@@ -51,6 +51,11 @@ rawGuess g = do
     code <- getResponseCode rsp
     case code of
         (2,0,0) -> decode . pack <$> getResponseBody rsp
+        (4,2,9) -> do
+            let time = 6000000 -- in microseconds
+            putStrLn $ "trying again in " ++ show time ++ " microseconds"
+            threadDelay time
+            rawGuess g
         _       -> do
             putStrLn $ "makeGuess returned error code: " ++ (show code)
             return Nothing
