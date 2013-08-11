@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module MyProblems (
-    getProblems
+    getProblems,
+    Problem (..)
 ) where
 
 import Control.Applicative

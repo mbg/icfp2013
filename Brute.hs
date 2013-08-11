@@ -1,13 +1,17 @@
 {-# LANGUAGE TupleSections #-}
 
 module Brute (
-    getSolns
+    brute
 ) where
 
 import Control.Arrow
 import Control.Monad.State
+import Data.Monoid ((<>))
+import Data.List (foldl')
 import Data.IntMap.Strict (IntMap)
 import qualified Data.IntMap.Strict as M
+import Data.Set (Set)
+import qualified Data.Set as S
 import Data.Word
 import Debug.Trace
 
@@ -16,60 +20,34 @@ import LocalEval
 
 {-
 Okay, so the point of this module is to brute force it.
-We keep a pair SubExp = (Expr, [Word64]) of the expression
-itself alone with what it will evaluate to on each input.
+In SubExp we keen an expression along with what it evaluates
+to on each input.
 
 The IntMap called SubExps stores all of the SubExps of a given level.
 That way, given all SubExp of size 6 and below, we can construct all
 SubExp of size 7, with most of the expression already evaluated for us.
 
-Ideally we want to be strict in the actual evaluated [Word64]
-for efficiency reasons but if we have too many inputs this could slow
-things down so we may only want to be strict in the first few (will
-probably need a custom data type for this). I'm not yet sure if we
-should be lazy in the Expr or not - if it's just data constructors
-then would evaluating to whnf make a difference?
-
 See 'main' for usage. Once there are multiple possible [Expr], that's
-when we can either
-    1) Guess the first one, and if that doesn't work we have a new input to test
-        all our Exprs on or;
-    2) Ask for more input (perhaps evenly spread) so that we can differentiate
-        between our current [Expr]
+when we can guess the first one, and if that doesn't work we have a new input to test
+all our Exprs on.
 
 CURRENT STATUS:
     should work for all expressions without if0, fold or tfold
     probably won't work for bonus, I have no idea
     probably incredibly slowly
 
+    NOTE: Some problems are unsolvable since we throw away exprs
+    with the same results for all inputs. To alleviate this, increase the size of the 'answers' field.
+    Or we could possibly just combine Exprs that give the same value without actually
+    just silently throwing them away i.e. make the expr field of a SubExp of type [Expr].
+
 TODO:
-    change SubExp to something like
-        data SubExp = SubExp
-            { expr      :: !Expr -- strict or not?
-            , fstAnswer :: !Word64
-            , sndAnswer :: !Word64
-            , answers   :: [Word64]}
-        as just the first or second answer should be
-        enough to differentiate between different SubExp
-        while the rest should be lazy.
+    add more strictness?
 
-    add strictness elsewhere too?
-
-    change SubExps to
-        type SubExps = IntMap (Set SubExp)
-    and add an Eq and Ord instance for SubExp which ignores the expr
-    field. That way, we don't differentiate between different
-    subexpressions that give the same answer for all inputs.
-    This will be much faster BUT HOWEVER this will cause some problems to be
-    unsolvable since we'll already have thrown away all the other possibilities.
-    To alleviate this, increase the size of the 'answers' field.
-    Or we could possible just combine Exprs that give the same value without actually
-    just silently throwing them away.
-
-    the skeleton for if0 is there, get it working
+    if0 - works just like the others
 
     maybe add an 'escape hatch' if we find a problem smaller than
-    needed that gives the right answers? Probably a bad idea tbh.
+    needed that gives the right answers?
 
     fold, tfold
         the trouble with this is that we currently assume (in 'firstLevel')
@@ -78,47 +56,68 @@ TODO:
         one lambda) some things need to be rewritten.
 -}
 
-type SubExp = (Expr, [Word64])
-type SubExps = IntMap [SubExp]
+data SubExp = SubExp
+    { expr      :: Expr -- could make this [Expr] to account for Expressions where
+                        -- the first set of inputs isn't enough to distinguish it
+    , fstAnswer :: !Word64
+    , sndAnswer :: !Word64
+    , answers   :: [Word64]}
 
--- an example of use. See how lots of solutions are generated that are all the same?
--- that Ord instance for SubExp above will stop this from happening
-main = print $ getSolns 6 ins outs tempOps
+instance Eq SubExp where
+    SubExp _ f s a == SubExp _ f' s' a' =
+        f == f' && s == s' && a == a'
+
+instance Ord SubExp where
+    SubExp _ f s a `compare` SubExp _ f' s' a' =
+        case compare f f' of
+            EQ -> case compare s s' of
+                    EQ -> compare a a'
+                    x' -> x'
+            x  -> x
+
+type SubExps = IntMap (Set SubExp)
+
+main = print $ brute 6 tempOps ins outs
     where
     ins = [2,3,4]
     outs = [4,5,6] -- corresponding to "Lambda x (Plus (Id "x" (Plus 1 1))""
     tempOps = [Op2 Plus, Op1 Not] -- note that 0, 1 and Id are always included
 
-getSolns :: Int -> [Word64] -> [Word64] -> [Op] -> [Expr]
-getSolns n ins outs ops = map fst $ filter isCorrect (exps M.! (n-1))
+brute :: Int -> [Op] -> [Word64] -> [Word64] -> [Program]
+brute n ops ins outs = map (Lambda "x" . expr) (filter isCorrect (S.toList (exps M.! (n-1))))
     -- since the lambda at the start is 1, we only need an expr of size (n-1)
     where
     -- do all of the outputs of the expr match the correct outputs?
-    isCorrect = and . zipWith (==) outs . snd
+    isCorrect (SubExp _ f s a) = and (zipWith (==) (f:s:a) outs)
     -- in turn, add each level of expressions to the map
     exps = foldl (addLevel ops) (firstLevel ins) [2..n-1]
 
 firstLevel :: [Word64] -> SubExps
-firstLevel input = M.singleton 1 [(Zero, replicate m 0), (One, replicate m 1), (Id "x", input)]
+firstLevel (i1:i2:is) = M.singleton 1 (S.fromList [zero, one, iden])
     where
-    m = length input
+    zero = SubExp Zero 0 0 (replicate m 0)
+    one  = SubExp One 1 1 (replicate m 1)
+    iden = i1 `seq` i2 `seq` SubExp (Id "x") i1 i2 is
+    m    = length is
+firstLevel _ = error "Brute needs at least 2 input examples"
 
 addLevel :: [Op] -> SubExps -> Int -> SubExps
--- it'd be nice to remove these bounds checks
--- also ONLY call this with n increasing from 2 onwards
-addLevel ops exps n = foldl (addOpAt n) exps ops
+-- ONLY call this with n increasing from 2 onwards
+addLevel ops exps n = foldl' (addOpAt n) exps ops
 
--- XXX: (++) on lists is bad!, use Set instead
 -- XXX: perhaps remove these bounds checks?
 --          would have to unroll the loop "[2..n-1]" in
 --          getSolns to some degree.
 addOpAt :: Int -> SubExps -> Op -> SubExps
 
 -- A Unary expression. A simple case, match the Op to each of the expressions of size n-1
-addOpAt n exps' (Op1 o1) = addOpAt' n exps' (map addO1 (exps' M.! (n-1)))
+addOpAt n exps' (Op1 o1) = addOpAt' n exps' (map addO1 (S.toList (exps' M.! (n-1))))
     where
     addO1 :: SubExp -> SubExp
-    addO1 (e, ans) = (UnaryOp o1 e, map (evalUnary o1) ans)
+    addO1 (SubExp e f s a) = f' `seq` s' `seq` SubExp (UnaryOp o1 e) f' s' (map (evalUnary o1) a)
+        where
+        f' = evalUnary o1 f
+        s' = evalUnary o1 s
 
 -- A Binary expression - more complicated since the sizes of the two subtrees
 -- can be different as long as they add up to n-1 and so 'possLevels' gives us
@@ -130,10 +129,10 @@ addOpAt n exps' (Op2 o2) | n >= 2 = addOpAt' n exps' $
     [ addO2 e1 e2
     | (l1,l2) <- possLevels (n-1)
     , (e1, e2) <- if l1 == l2
-        then sym (exps' M.! l1) -- we don't want duplicates w.r.t. symmetry
-        else [ (e1', e2')       -- we're in no danger of duplicates as e1 and e2 are different sizes
-             | e1' <- (exps' M.! l1)
-             , e2' <- (exps' M.! l2)]]
+        then sym (S.toList (exps' M.! l1)) -- we don't want duplicates w.r.t. symmetry
+        else [ (e1', e2')                  -- we're in no danger of duplicates as e1 and e2 are different sizes
+             | e1' <- S.toList (exps' M.! l1)
+             , e2' <- S.toList (exps' M.! l2)]]
     where
     -- sym [a,b,c] = [(a,a),(a,b),(a,c),(b,b),(b,c),(c,c)]
     sym :: [SubExp] -> [(SubExp, SubExp)]
@@ -145,34 +144,16 @@ addOpAt n exps' (Op2 o2) | n >= 2 = addOpAt' n exps' $
     possLevels :: Int -> [(Int, Int)]
     possLevels n = [(x, n-x) | x <- [1..n `div` 2]]
 
-    possExps :: [SubExp]
-    possExps = undefined -- the levels of the sub expressions just need to sum to n-1
-
     addO2 :: SubExp -> SubExp -> SubExp
-    addO2 (e1, ans1) (e2, ans2) = (BinaryOp o2 e1 e2, zipWith (evalBinary o2) ans1 ans2)
-{-
-addOpAt n exps' OIfZero | n >= 3 = addOpAt' n exps' $
-    [ addIfZero e1 e2 e3
-    | (l1, l2, l3) <- possLevels (n-1)
-    , e1 <- exps' M.! l1
-    , e2 <- exps' M.! l2
-    , e3 <- exps' M.! l3 ]
-
-    where
-    -- see posLevels above, but must satisfy
-        forall n. all (\(x,y,z) -> x+y+z == n) (possLevels n) == True
-    possLevels :: Int -> [(Int, Int, Int)]
-    possLevels = undefined
-
-    addIfZero :: (SubExp, SubExp, SubExp) -> SubExp
-    addIfZero ((e1, ans1), (e2, ans2), (e3, ans3)) = (IfZero e1 e2 e3, zipWith3 evalIfZero ans1 ans2 ans3)
-
-    evalIfZero :: Word64 -> Word64 -> Word64 -> Word64
-    -- TODO: "if (x .&. 0)" or something instead?
-    evalIfZero x t f = if x == 0 then t else f
--}
+    addO2 (SubExp e1 f1 s1 a1) (SubExp e2 f2 s2 a2) = f' `seq` s' `seq`
+        SubExp (BinaryOp o2 e1 e2) f' s' (zipWith (evalBinary o2) a1 a2)
+        where
+        f' = evalBinary o2 f1 f2
+        s' = evalBinary o2 s1 s2
 
 addOpAt _ e _ = e
 
 -- simply to reuse code
-addOpAt' n exps' subExps = M.insertWith (++) n subExps exps'
+{-# INLINE addOpAt' #-}
+addOpAt' :: Int -> SubExps -> [SubExp] -> SubExps
+addOpAt' n exps' subExps = M.insertWith (<>) n (S.fromList subExps) exps'

@@ -2,7 +2,8 @@
 
 module Training (
     getID,
-    getRandID
+    getRandID,
+    runTraining
 ) where
 
 import Control.Applicative
@@ -78,10 +79,10 @@ runTrainingWith tr = do
             er <- eval (Left (tpID tp)) defaultArgs64
             case er of
                 Nothing   -> putStrLn "Couldn't evaluate"
-                (Just rs) -> mapM_ print $ getSolns (tpSize tp) defaultArgs64 rs (tpOps tp)
+                (Just rs) -> mapM_ print $ brute (tpSize tp) (tpOps tp) defaultArgs64 rs
 
 runTraining :: IO ()
-runTraining = runTrainingWith (TR (Just 4) (Just ""))
+runTraining = runTrainingWith (TR (Just 10) (Just ""))
 
 {-
 David says: I can only assume these were placeholders,

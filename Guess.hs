@@ -1,6 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Guess (
+    GuessRequest (..),
+    GuessResponse (..),
+    rawGuess
 ) where
 
 import Control.Applicative
