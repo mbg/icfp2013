@@ -13,7 +13,7 @@ import Training
 import PrettyPrint
 
 
-training = True
+training = False
 debug = True
 inputLength = 5
 

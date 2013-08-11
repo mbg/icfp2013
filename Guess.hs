@@ -7,6 +7,7 @@ module Guess (
 ) where
 
 import Control.Applicative
+import Control.Concurrent (threadDelay)
 import Control.Monad
 import Data.Aeson
 import Config
