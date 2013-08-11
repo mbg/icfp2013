@@ -12,7 +12,9 @@ import Control.Monad
 import Data.Aeson
 import Data.ByteString.Lazy.Char8 (pack, unpack)
 import Data.Maybe (fromJust)
+import Data.Word
 import Network.HTTP
+import System.Random
 
 import Config
 import AST
@@ -77,7 +79,8 @@ runTrainingWith tr = do
         Nothing   -> putStrLn "Couldn't parse problem"
         (Just tp) -> do
             putStrLn $ tpProgram tp
-            er <- eval (Left (tpID tp)) defaultArgs64
+            inputs <- inputSpread
+            er <- eval (Left (tpID tp)) inputs
             case er of
                 Nothing   -> putStrLn "Couldn't evaluate"
                 (Just rs) -> let exps = brute (tpSize tp) (tpOps tp) defaultArgs64 rs in do
@@ -85,19 +88,16 @@ runTrainingWith tr = do
                     mapM_ print exps
                     case exps of
                         []       -> putStrLn "no expressions!"
-                        (prog:_) -> rawGuess (GReq (tpID tp) (ppProgram prog "")) >>= 
+                        (prog:_) -> rawGuess (GReq (tpID tp) (ppProgram prog "")) >>=
                                      maybe (putStrLn "brute failed") (\res -> case res of
                                         GRes "win" _ _ _          -> putStrLn $ "correctly guessed " ++ show (tpID tp)
                                         GRes "mismatch" _  _  _   -> putStrLn $ "mismatch on " ++ show (tpID tp) ++ ", moving on"
                                         GRes "error" _ (Just e) _ -> putStrLn $ "on problem " ++ show (tpID tp) ++ " we got the errror " ++ e
                                         _                         -> putStrLn "unrecognised guess response")
+inputLength = 10
+
 runTraining :: IO ()
-runTraining = runTrainingWith (TR (Just 10) (Just ""))
+runTraining = runTrainingWith (TR (Just inputLength) (Just ""))
 
-{-
-David says: I can only assume these were placeholders,
-particularly as with the previous implementations
-    runTrainingWith tr === requestProblem tr >>= print
-and runTraining just returned a status error
--}
-
+inputSpread :: IO [Word64]
+inputSpread = replicateM inputLength randomIO
